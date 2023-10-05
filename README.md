@@ -34,7 +34,7 @@ This tool is broken down into three main components which take place when perfor
 Provisioning is done via the `cbtools-autobench provision` sub-command which accepts a configuration (see Configuration
 for more information) which describes which servers to user for the backup/cluster nodes.
 
-Loading the benchmarking data will be done the first time provision completes, and may be triggered manually (for
+Loading the benchmarking data will be done the first time provisioning completes, and may be triggered manually (for
 example to load a different dataset without provisioning the cluster again) using the `--load-only` flag.
 
 Benchmarks may be run using the `cbtools-autobench benchmark [backup|restore]` sub-command which accepts a configuration

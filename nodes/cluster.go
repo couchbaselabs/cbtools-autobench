@@ -526,7 +526,7 @@ func (c *Cluster) loadData() error {
 
 	switch c.blueprint.Bucket.Data.DataLoader {
 	case "", value.CBM:
-		nodeDataLoadingFunc = func(node *Node) error { return c.loadDataFromNodeUsingBackupMgr(node, <-items) }
+		nodeDataLoadingFunc = func(node *Node) error { return c.loadDataFromNodeUsingBackupMgr(node, <-items, c.blueprint.Bucket.Data.Prefix) }
 	case value.Pillowfight:
 		nodeDataLoadingFunc = func(node *Node) error { return c.loadDataFromNodeUsingPillowfight(node, <-items) }
 	default:
@@ -538,7 +538,7 @@ func (c *Cluster) loadData() error {
 
 // loadDataFromNodeUsingBackupMgr runs 'cbbackupmgr' on the provided node to load the given number of items into the
 // benchmarking bucket.
-func (c *Cluster) loadDataFromNodeUsingBackupMgr(node *Node, items int) error {
+func (c *Cluster) loadDataFromNodeUsingBackupMgr(node *Node, items int, prefix string) error {
 	fields := log.Fields{
 		"host":    node.blueprint.Host,
 		"bucket":  "default",
@@ -549,10 +549,16 @@ func (c *Cluster) loadDataFromNodeUsingBackupMgr(node *Node, items int) error {
 
 	log.WithFields(fields).Info("Running 'cbbackupmgr' to load data into bucket")
 
+	p := "$(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 5 | head -n 1)::"
+	if prefix != "" {
+		p += prefix
+	}
+
 	command := fmt.Sprintf(`cbbackupmgr generate --cluster localhost:8091 -u Administrator --password asdasd \
-		--bucket default --num-documents %d --prefix $(cat /dev/urandom | tr -dc 'a-z0-9' | fold -w 5 | head -n 1):: \
+		--bucket default --num-documents %d --prefix %s \
 		--size %d --no-progress-bar`,
 		items,
+		p,
 		c.blueprint.Bucket.Data.Size,
 	)
 

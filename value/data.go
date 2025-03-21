@@ -37,6 +37,7 @@ const (
 type DataBlueprint struct {
 	DataLoader   DataLoaderType `json:"data_loader,omitempty" yaml:"data_loader,omitempty"`
 	Items        int            `json:"items,omitempty" yaml:"items,omitempty"`
+	Prefix       string         `json:"prefix,omitempty" yaml:"prefix,omitempty"`
 	ActiveItems  int            `json:"active_items,omitempty" yaml:"active_items,omitempty"`
 	Size         int            `json:"size,omitempty" yaml:"size,omitempty"`
 	Compressible bool           `json:"compressible,omitempty" yaml:"compressible,omitempty"`

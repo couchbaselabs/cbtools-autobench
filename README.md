@@ -333,6 +333,8 @@ blueprint:
         compressible: false
         # Number of threads to use when loading data (default is number of vCPUs)
         load_threads: 0
+        # The prefix for document keys
+        prefix: ""
   # Describing the backup client
   backup_client:
     # Hostname of the server, used to connect via SSH (may be an IP address)

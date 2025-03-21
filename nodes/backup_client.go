@@ -48,10 +48,18 @@ func NewBackupClient(config *value.SSHConfig, blueprint *value.BackupClientBluep
 	}, nil
 }
 
+func (b *BackupClient) copyCBMBinary() error {
+	return b.node.client.SecureUpload(b.blueprint.Executable, "/opt/couchbase/bin/cbbackupmgr")
+}
+
 // Provision will use the client blueprint to provision the backup client, note that if the client is already
 // provisioned it will be re-provisioned i.e. we will remove then install Couchbase.
 func (b *BackupClient) Provision() error {
 	log.WithField("host", b.blueprint.Host).Info("Provisioning backup client")
+
+	if b.blueprint.Executable != "" {
+		return b.copyCBMBinary()
+	}
 
 	err := b.node.provision(b.blueprint.PackagePath)
 	if err != nil {

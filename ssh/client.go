@@ -17,6 +17,7 @@ package ssh
 import (
 	"fmt"
 	"net"
+	"path/filepath"
 
 	fsutil "github.com/couchbase/tools-common/fs/util"
 	"github.com/jamesl33/cbtools-autobench/value"
@@ -78,7 +79,10 @@ func (c *Client) SecureUpload(source, sink string) error {
 		"sink":   sink,
 	}
 
-	log.WithFields(fields).Debug("Uploading file")
+	log.WithFields(fields).Debug("Creating directory")
+	if _, err := c.ExecuteCommand(value.NewCommand("mkdir -p %s", filepath.Dir(sink))); err != nil {
+		return fmt.Errorf("could not create directory %q: %w", filepath.Dir(sink), err)
+	}
 
 	session, err := c.client.NewSession()
 	if err != nil {

@@ -341,6 +341,8 @@ blueprint:
     #
     # Will be installed on the backup client (will be disabled after install)
     package_path: ""
+    # A path to a cbbackupmgr executable. Can be used instead of package_path
+    executable: ""
 # Describing the benchmark(s) that will take place
 benchmark:
   # How many times to run the benchmark, more iterations will provide more accurate results

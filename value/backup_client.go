@@ -28,6 +28,10 @@ type BackupClientBlueprint struct {
 	// Host is the hostname/address of the node
 	Host string `yaml:"host,omitempty"`
 
+	// Executable is a path to a cbbackupmgr binary to copy to the backup client. This should be supplied instead of
+	// 'PackagePath' and vice versa.
+	Executable string `yaml:"executable,omitempty"`
+
 	// PackagePath is the path to a local package. This package will be secure copied to the backup client and installed
 	// instead of downloading the build from latest builds.
 	//

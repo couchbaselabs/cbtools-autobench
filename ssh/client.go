@@ -70,6 +70,16 @@ func NewClient(host string, config *value.SSHConfig) (*Client, error) {
 	}, nil
 }
 
+func (c *Client) S3Download(source, sink string) error {
+	output, err := c.ExecuteCommand(value.NewCommand("aws s3 cp %s %s", source, sink))
+	if err != nil {
+		log.WithFields(log.Fields{"output": string(output)}).Error("could not run aws s3")
+		return errors.Wrap(err, "could not run 'aws s3'")
+	}
+
+	return nil
+}
+
 // SecureUpload emulates the 'scp' command by uploading the file at the provided path to the remote server.
 func (c *Client) SecureUpload(source, sink string) error {
 	fields := log.Fields{

@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/jamesl33/cbtools-autobench/ssh"
@@ -92,22 +93,36 @@ func (n *Node) uninstallCB() error {
 	return nil
 }
 
-// installCB uploads the Couchbase Server install package to the remote machine and installs it.
-//
-// NOTE: The package archive will be removed upon completion.
-func (n *Node) installCB(localPath string) error {
-	remotePath := filepath.Join(os.TempDir(), filepath.Base(localPath))
+func (n *Node) getPackage(src, dst string) error {
+	log.WithField("host", n.blueprint.Host).Info("Getting package archive")
 
-	log.WithField("host", n.blueprint.Host).Info("Uploading package archive")
+	if strings.HasPrefix(src, "s3://") {
+		if err := n.client.S3Download(src, dst); err != nil {
+			return errors.Wrap(err, "failed to download package archive")
+		}
 
-	err := n.client.SecureUpload(localPath, remotePath)
-	if err != nil {
+		return nil
+	}
+
+	if err := n.client.SecureUpload(src, dst); err != nil {
 		return errors.Wrap(err, "failed to upload package archive")
 	}
 
-	log.WithField("host", n.blueprint.Host).Info("Installing 'couchbase-server'")
+	return nil
+}
 
-	err = n.client.InstallPackageAt(remotePath)
+// installCB uploads the Couchbase Server install package to the remote machine and installs it.
+//
+// NOTE: The package archive will be removed upon completion.
+func (n *Node) installCB(path string) error {
+	remotePath := filepath.Join(os.TempDir(), filepath.Base(path))
+
+	log.WithField("host", n.blueprint.Host).Info("Installing 'couchbase-server'")
+	if err := n.getPackage(path, remotePath); err != nil {
+		return errors.Wrap(err, "failed to get 'couchbase-server'")
+	}
+
+	err := n.client.InstallPackageAt(remotePath)
 	if err != nil {
 		return errors.Wrap(err, "failed to install 'couchbase-server'")
 	}

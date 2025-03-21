@@ -290,7 +290,7 @@ ssh:
 blueprint:
   # Describing the cluster/dataset
   cluster:
-    # A path to a package archive i.e. .deb/.rpm
+    # A path to a package archive i.e. .deb/.rpm. Can be an s3 URI as well as a local path.
     #
     # Will be installed on all the cluster nodes
     package_path: ""

@@ -645,7 +645,7 @@ func (c *Cluster) serverAdd(node *Node) error {
 	}
 
 	_, err := c.nodes[0].client.ExecuteCommand(value.NewCommand(`
-		couchbase-cli server-add -c localhost:8091 -u Administrator -p asdasd --server-add %s \
+		couchbase-cli server-add -c localhost:8091 -u Administrator -p asdasd --server-add %s:18091 \
 			--server-add-username Administrator --server-add-password asdasd --services data`, node.blueprint.Host))
 
 	return err

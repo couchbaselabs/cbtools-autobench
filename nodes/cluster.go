@@ -26,9 +26,10 @@ import (
 	"github.com/jamesl33/cbtools-autobench/value"
 
 	"github.com/apex/log"
-	"github.com/couchbase/tools-common/sync/hofp"
-	"github.com/couchbase/tools-common/utils/maths"
-	"github.com/couchbase/tools-common/utils/system"
+	"github.com/couchbase/tools-common/functional/slices"
+	netutil "github.com/couchbase/tools-common/http/util"
+	"github.com/couchbase/tools-common/sync/v2/hofp"
+	"github.com/couchbase/tools-common/utils/v3/system"
 	"github.com/pkg/errors"
 )
 
@@ -49,7 +50,7 @@ type Cluster struct {
 // NewCluster creates a connection to each of the remote cluster nodes using the provided ssh config.
 func NewCluster(config *value.SSHConfig, blueprint *value.ClusterBlueprint) (*Cluster, error) {
 	var (
-		pool  = hofp.NewPool(hofp.Options{Size: maths.Min(system.NumCPU(), len(blueprint.Nodes))})
+		pool  = hofp.NewPool(hofp.Options{Size: min(system.NumCPU(), len(blueprint.Nodes))})
 		nodes = make([]*Node, len(blueprint.Nodes))
 	)
 
@@ -478,7 +479,7 @@ func (c *Cluster) flushCaches() error {
 // forEachNode is a utility function which concurrently runs the provided function on each node in the cluster.
 func (c *Cluster) forEachNode(fn func(node *Node) error) error {
 	pool := hofp.NewPool(hofp.Options{
-		Size: maths.Min(system.NumCPU(), len(c.nodes)),
+		Size: min(system.NumCPU(), len(c.nodes)),
 	})
 
 	queue := func(node *Node) error { return pool.Queue(func(_ context.Context) error { return fn(node) }) }
@@ -687,8 +688,17 @@ func (c *Cluster) addPiTRArgs(command string) string {
 // ConnectionString returns a connection string which can be used to connect to the cluster.
 //
 // NOTE: We don't use a multi-node connection string currently since they're not supported until 7.0.0.
-func (c *Cluster) ConnectionString() string {
-	return fmt.Sprintf("couchbase://%s", c.nodes[0].blueprint.Host)
+func (c *Cluster) ConnectionString(tls bool) string {
+	schema := "couchbase://"
+	if tls {
+		schema = "couchbases://"
+	}
+
+	hosts := slices.Map[[]*Node, []string](c.nodes, func(e *Node) string {
+		return e.blueprint.Host
+	})
+
+	return schema + netutil.HostsToConnectionString(hosts)
 }
 
 // hosts returns a slice of all the hostnames for the nodes in the cluster.

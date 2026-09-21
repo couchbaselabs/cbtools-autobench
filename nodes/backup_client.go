@@ -25,7 +25,6 @@ import (
 	"github.com/jamesl33/cbtools-autobench/value"
 
 	"github.com/apex/log"
-	"github.com/couchbase/tools-common/utils/maths"
 	"github.com/pkg/errors"
 )
 
@@ -131,7 +130,7 @@ func (b *BackupClient) BenchmarkBackup(ctx context.Context, config *value.Benchm
 
 	results := make(value.BenchmarkResults, 0, config.Iterations)
 
-	for iteration := 0; iteration < maths.Max(1, config.Iterations); iteration++ {
+	for iteration := 0; iteration < max(1, config.Iterations); iteration++ {
 		log.WithField("iteration", iteration+1).Info("Beginning 'cbbackupmgr' backup benchmark")
 
 		result, err := b.benchmarkBackup(config, cluster)
@@ -174,7 +173,7 @@ func (b *BackupClient) BenchmarkRestore(ctx context.Context, config *value.Bench
 
 	results := make(value.BenchmarkResults, 0, config.Iterations)
 
-	for iteration := 0; iteration < maths.Max(1, config.Iterations); iteration++ {
+	for iteration := 0; iteration < max(1, config.Iterations); iteration++ {
 		log.WithField("iteration", iteration+1).Info("Beginning 'cbbackupmgr' restore benchmark")
 
 		if !config.CBMConfig.Blackhole {
@@ -297,7 +296,9 @@ func (b *BackupClient) createBackup(config *value.BenchmarkConfig, cluster *Clus
 
 	log.WithFields(fields).Info("Creating backup")
 
-	_, err := b.node.client.ExecuteCommand(config.CBMConfig.CommandBackup(cluster.ConnectionString(), ignoreBlackhole))
+	command := config.CBMConfig.CommandBackup(cluster.ConnectionString(config.CBMConfig.TLS), ignoreBlackhole)
+
+	_, err := b.node.client.ExecuteCommand(command)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to run backup")
 	}
@@ -356,7 +357,9 @@ func (b *BackupClient) restoreBackup(config *value.BenchmarkConfig, cluster *Clu
 
 	log.WithFields(fields).Info("Restoring backup")
 
-	_, err := b.node.client.ExecuteCommand(config.CBMConfig.CommandRestore(cluster.ConnectionString()))
+	command := config.CBMConfig.CommandRestore(cluster.ConnectionString(config.CBMConfig.TLS))
+
+	_, err := b.node.client.ExecuteCommand(command)
 
 	return err
 }
@@ -396,7 +399,7 @@ func (b *BackupClient) purgeArchive(config *value.BenchmarkConfig) error {
 		return errors.Wrap(err, "failed to purge remote archive")
 	}
 
-	log.WithField("staging_directory", config.CBMConfig.Archive).Info("Purging local staging directory")
+	log.WithField("staging_directory", config.CBMConfig.ObjStagingDirectory).Info("Purging local staging directory")
 
 	return b.node.client.RemoveDirectory(config.CBMConfig.ObjStagingDirectory)
 }

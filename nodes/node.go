@@ -159,12 +159,13 @@ func (n *Node) createDataPath() error {
 	return nil
 }
 
-// initializeCB will perform node level initialization of Couchbase Server.
-func (n *Node) initializeCB() error {
+// initializeCB will perform node level initialization of Couchbase Server using the provided cluster credentials.
+func (n *Node) initializeCB(credentials *value.Credentials) error {
 	fields := log.Fields{"host": n.blueprint.Host, "data_path": n.blueprint.DataPath}
 	log.WithFields(fields).Info("Initializing node")
 
-	init := "couchbase-cli node-init -c localhost:8091 -u Administrator -p asdasd"
+	init := fmt.Sprintf("couchbase-cli node-init -c localhost:8091 -u %s -p %s", credentials.QuotedUser(),
+		credentials.QuotedPass())
 	if n.blueprint.DataPath != "" {
 		init += fmt.Sprintf(" --node-init-data-path %s", n.blueprint.DataPath)
 	}

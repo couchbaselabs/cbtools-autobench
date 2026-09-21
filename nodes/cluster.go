@@ -194,9 +194,7 @@ func (c *Cluster) CollectLogs(path string) ([]string, error) {
 func (c *Cluster) Stats() (*value.Stats, error) {
 	log.WithField("host", c.blueprint.Nodes[0].Host).Info("Getting bucket stats")
 
-	// This should probably be done with 'cbrest' or by using an actual HTTP client but for now using curl will suffice
-	output, err := exec.Command("curl", "-s", "-u", "Administrator:asdasd",
-		fmt.Sprintf("%s:8091/pools/default/buckets/default", c.blueprint.Nodes[0].Host)).CombinedOutput()
+	output, err := c.curl(fmt.Sprintf("/pools/default/buckets/%s", c.blueprint.Bucket.BucketName()))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to execute curl command")
 	}
@@ -220,8 +218,8 @@ func (c *Cluster) startCollection() error {
 	log.Info("Starting log collection")
 
 	_, err := c.nodes[0].client.ExecuteCommand(
-		value.NewCommand(`couchbase-cli collect-logs-start -c %s -u Administrator -p asdasd --all-nodes`,
-			c.nodes[0].blueprint.Host))
+		value.NewCommand(`couchbase-cli collect-logs-start -c %s -u %s -p %s --all-nodes`,
+			c.nodes[0].blueprint.Host, c.blueprint.Credentials.QuotedUser(), c.blueprint.Credentials.QuotedPass()))
 
 	return err
 }
@@ -230,9 +228,7 @@ func (c *Cluster) startCollection() error {
 func (c *Cluster) compactionComplete() (bool, error) {
 	log.Info("Checking compaction status")
 
-	// This should probably be done with 'cbrest' or by using an actual HTTP client but for now using curl will suffice
-	output, err := exec.Command("curl", "-s", "-u", "Administrator:asdasd",
-		fmt.Sprintf("%s:8091/pools/default/tasks", c.blueprint.Nodes[0].Host)).CombinedOutput()
+	output, err := c.curl("/pools/default/tasks")
 	if err != nil {
 		return false, errors.Wrap(err, "")
 	}
@@ -263,7 +259,8 @@ func (c *Cluster) logCollectionComplete() (bool, error) {
 	log.Info("Checking log collection status")
 
 	_, err := c.nodes[0].client.ExecuteCommand(value.NewCommand(`couchbase-cli collect-logs-status -c %s \
-		-u Administrator -p asdasd | grep -q '^Status: completed'`, c.nodes[0].blueprint.Host))
+		-u %s -p %s | grep -q '^Status: completed'`, c.nodes[0].blueprint.Host, c.blueprint.Credentials.QuotedUser(),
+		c.blueprint.Credentials.QuotedPass()))
 
 	return err == nil, nil
 }
@@ -273,8 +270,9 @@ func (c *Cluster) collectionPaths() ([]string, error) {
 	log.Info("Determining which logs to download from cluster")
 
 	output, err := c.nodes[0].client.ExecuteCommand(value.NewCommand(
-		`couchbase-cli collect-logs-status -c %s -u Administrator -p asdasd | grep 'path :' | \
-			awk '{ print $3 }' | paste -sd ","`, c.nodes[0].blueprint.Host,
+		`couchbase-cli collect-logs-status -c %s -u %s -p %s | grep 'path :' | \
+			awk '{ print $3 }' | paste -sd ","`, c.nodes[0].blueprint.Host, c.blueprint.Credentials.QuotedUser(),
+		c.blueprint.Credentials.QuotedPass(),
 	))
 
 	return strings.Split(strings.TrimSpace(string(output)), ","), err
@@ -323,7 +321,7 @@ func (c *Cluster) provisionNode(node *Node) error {
 		return errors.Wrap(err, "failed to create data path")
 	}
 
-	err = node.initializeCB()
+	err = node.initializeCB(c.blueprint.Credentials)
 	if err != nil {
 		return errors.Wrap(err, "failed to initialize Couchbase Server")
 	}
@@ -361,8 +359,9 @@ func (c *Cluster) limitVBuckets() error {
 	log.WithField("vbuckets", c.blueprint.Bucket.VBuckets).Info("Limiting number of vBuckets")
 
 	_, err := c.nodes[0].client.ExecuteCommand(value.NewCommand(
-		`curl -X POST -u Administrator:asdasd localhost:8091/diag/eval -d \
-			"ns_config:set(couchbase_num_vbuckets_default, %d)."`, c.blueprint.Bucket.VBuckets))
+		`curl -X POST -u %s localhost:8091/diag/eval -d \
+			"ns_config:set(couchbase_num_vbuckets_default, %d)."`, c.blueprint.Credentials.QuotedUserPass(),
+		c.blueprint.Bucket.VBuckets))
 
 	return err
 }
@@ -376,8 +375,8 @@ func (c *Cluster) enableDeveloperPreviewMode() error {
 	log.WithField("hosts", c.hosts()).Info("Enabling developer preview mode")
 
 	// Using POST request instead of the related CLI command since it prompts for user input confirmation
-	_, err := c.nodes[0].client.ExecuteCommand(value.NewCommand(`curl -X POST -u Administrator:asdasd \
-		localhost:8091/settings/developerPreview -d "enabled=true"`))
+	_, err := c.nodes[0].client.ExecuteCommand(value.NewCommand(`curl -X POST -u %s \
+		localhost:8091/settings/developerPreview -d "enabled=true"`, c.blueprint.Credentials.QuotedUserPass()))
 
 	return err
 }
@@ -386,7 +385,7 @@ func (c *Cluster) enableDeveloperPreviewMode() error {
 // on the cluster nodes.
 func (c *Cluster) createBucket() error {
 	fields := log.Fields{
-		"name":                 "default",
+		"name":                 c.blueprint.Bucket.BucketName(),
 		"type":                 c.blueprint.Bucket.Type,
 		"eviction_policy":      c.blueprint.Bucket.EvictionPolicy,
 		"pitr_enabled":         c.blueprint.Bucket.PiTREnabled,
@@ -397,11 +396,14 @@ func (c *Cluster) createBucket() error {
 	log.WithFields(fields).Info("Creating bucket")
 
 	command := fmt.Sprintf(
-		`%s couchbase-cli bucket-create --bucket default --bucket-type %s -c localhost:8091 \
-			-u Administrator -p asdasd --bucket-ramsize $QUOTA --bucket-eviction-policy %s \
+		`%s couchbase-cli bucket-create --bucket %s --bucket-type %s -c localhost:8091 \
+			-u %s -p %s --bucket-ramsize $QUOTA --bucket-eviction-policy %s \
 			--bucket-replica 0 --enable-flush 1 --wait`,
 		memInfo,
+		c.blueprint.Bucket.BucketName(),
 		c.blueprint.Bucket.Type,
+		c.blueprint.Credentials.QuotedUser(),
+		c.blueprint.Credentials.QuotedPass(),
 		c.blueprint.Bucket.EvictionPolicy,
 	)
 
@@ -416,10 +418,11 @@ func (c *Cluster) createBucket() error {
 //
 // TODO (jamesl33) This looks to be a synchronous operation so for large buckets this operation may timeout and fail.
 func (c *Cluster) flushBucket() error {
-	log.WithField("name", "default").Info("Flushing bucket")
+	log.WithField("name", c.blueprint.Bucket.BucketName()).Info("Flushing bucket")
 
 	_, err := c.nodes[0].client.ExecuteCommand(value.NewCommand(`couchbase-cli bucket-flush -c localhost:8091 \
-		-u Administrator -p asdasd --bucket default --force`))
+		-u %s -p %s --bucket %s --force`, c.blueprint.Credentials.QuotedUser(), c.blueprint.Credentials.QuotedPass(),
+		c.blueprint.Bucket.BucketName()))
 	if err != nil {
 		return err
 	}
@@ -432,10 +435,11 @@ func (c *Cluster) flushBucket() error {
 
 // compactBucket compacts the benchmarking bucket on the remote cluster.
 func (c *Cluster) compactBucket() error {
-	log.WithField("name", "default").Info("Compacting bucket")
+	log.WithField("name", c.blueprint.Bucket.BucketName()).Info("Compacting bucket")
 
 	_, err := c.nodes[0].client.ExecuteCommand(value.NewCommand(`couchbase-cli bucket-compact -c localhost:8091 \
-		-u Administrator -p asdasd --bucket default`))
+		-u %s -p %s --bucket %s`, c.blueprint.Credentials.QuotedUser(), c.blueprint.Credentials.QuotedPass(),
+		c.blueprint.Bucket.BucketName()))
 	if err != nil {
 		return errors.Wrap(err, "")
 	}
@@ -505,9 +509,10 @@ func (c *Cluster) modifyEvictionPercentage(node *Node, percentage int) error {
 	fields := log.Fields{"node": node.blueprint.Host, "percentage": percentage}
 	log.WithFields(fields).Info("Modifying eviction percentage on node")
 
-	_, err := c.nodes[0].client.ExecuteCommand(
-		value.NewCommand(`cbepctl localhost:11210 -b default -u Administrator -p asdasd \
-			set flush_param item_eviction_age_percentage %d`, percentage))
+	_, err := node.client.ExecuteCommand(
+		value.NewCommand(`cbepctl localhost:11210 -b %s -u %s -p %s \
+			set flush_param item_eviction_age_percentage %d`, c.blueprint.Bucket.BucketName(),
+			c.blueprint.Credentials.QuotedUser(), c.blueprint.Credentials.QuotedPass(), percentage))
 
 	return err
 }
@@ -544,7 +549,7 @@ func (c *Cluster) loadData() error {
 func (c *Cluster) loadDataFromNodeUsingBackupMgr(node *Node, items int, prefix string) error {
 	fields := log.Fields{
 		"host":    node.blueprint.Host,
-		"bucket":  "default",
+		"bucket":  c.blueprint.Bucket.BucketName(),
 		"items":   items,
 		"size":    c.blueprint.Bucket.Data.Size,
 		"threads": c.blueprint.Bucket.Data.LoadThreads,
@@ -557,9 +562,12 @@ func (c *Cluster) loadDataFromNodeUsingBackupMgr(node *Node, items int, prefix s
 		p += prefix
 	}
 
-	command := fmt.Sprintf(`cbbackupmgr generate --cluster localhost:8091 -u Administrator --password asdasd \
-		--bucket default --num-documents %d --prefix %s \
+	command := fmt.Sprintf(`cbbackupmgr generate --cluster localhost:8091 -u %s --password %s \
+		--bucket %s --num-documents %d --prefix %s \
 		--size %d --no-progress-bar`,
+		c.blueprint.Credentials.QuotedUser(),
+		c.blueprint.Credentials.QuotedPass(),
+		c.blueprint.Bucket.BucketName(),
 		items,
 		p,
 		c.blueprint.Bucket.Data.Size,
@@ -599,7 +607,7 @@ func (c *Cluster) loadDataFromNodeUsingPillowfight(node *Node, items int) error 
 
 	fields := log.Fields{
 		"host":         node.blueprint.Host,
-		"bucket":       "default",
+		"bucket":       c.blueprint.Bucket.BucketName(),
 		"items":        items,
 		"active_items": c.blueprint.Bucket.Data.ActiveItems,
 		"cycles":       cyclesNum,
@@ -609,8 +617,11 @@ func (c *Cluster) loadDataFromNodeUsingPillowfight(node *Node, items int) error 
 
 	log.WithFields(fields).Info("Running 'pillowfight' to load data into bucket")
 
-	command := fmt.Sprintf(`cbc-pillowfight -U localhost -u Administrator -P asdasd -B %d -I %d --num-cycles %d \
+	command := fmt.Sprintf(`cbc-pillowfight -U localhost/%s -u %s -P %s -B %d -I %d --num-cycles %d \
 		--rate-limit %d -m %d -M %d -r 100 -R --sequential`,
+		c.blueprint.Bucket.BucketName(),
+		c.blueprint.Credentials.QuotedUser(),
+		c.blueprint.Credentials.QuotedPass(),
 		c.blueprint.Bucket.Data.ActiveItems,
 		c.blueprint.Bucket.Data.ActiveItems,
 		cyclesNum,
@@ -634,12 +645,12 @@ func (c *Cluster) loadDataFromNodeUsingPillowfight(node *Node, items int) error 
 
 // clusterInit uses the CLI to initialize the cluster with an 80% ram quota and the standard cluster_run credentials.
 func (c *Cluster) clusterInit() error {
-	fields := log.Fields{"hosts": c.hosts(), "username": "Administrator", "password": "asdasd"}
+	fields := log.Fields{"hosts": c.hosts(), "username": c.blueprint.Credentials.User()}
 	log.WithFields(fields).Info("Initializing cluster")
 
 	_, err := c.nodes[0].client.ExecuteCommand(value.NewCommand(`
-		%s couchbase-cli cluster-init -c localhost:8091 --cluster-username Administrator --cluster-password asdasd \
-			--cluster-ramsize $QUOTA`, memInfo))
+		%s couchbase-cli cluster-init -c localhost:8091 --cluster-username %s --cluster-password %s \
+			--cluster-ramsize $QUOTA`, memInfo, c.blueprint.Credentials.QuotedUser(), c.blueprint.Credentials.QuotedPass()))
 
 	return err
 }
@@ -654,8 +665,10 @@ func (c *Cluster) serverAdd(node *Node) error {
 	}
 
 	_, err := c.nodes[0].client.ExecuteCommand(value.NewCommand(`
-		couchbase-cli server-add -c localhost:8091 -u Administrator -p asdasd --server-add %s:18091 \
-			--server-add-username Administrator --server-add-password asdasd --services data`, node.blueprint.Host))
+		couchbase-cli server-add -c localhost:8091 -u %s -p %s --server-add %s:18091 \
+			--server-add-username %s --server-add-password %s --services data`,
+		c.blueprint.Credentials.QuotedUser(), c.blueprint.Credentials.QuotedPass(), node.blueprint.Host,
+		c.blueprint.Credentials.QuotedUser(), c.blueprint.Credentials.QuotedPass()))
 
 	return err
 }
@@ -665,7 +678,8 @@ func (c *Cluster) rebalance() error {
 	log.Info("Rebalancing cluster")
 
 	_, err := c.nodes[0].client.ExecuteCommand(
-		value.NewCommand(`couchbase-cli rebalance -c localhost:8091 -u Administrator -p asdasd`))
+		value.NewCommand(`couchbase-cli rebalance -c localhost:8091 -u %s -p %s`,
+			c.blueprint.Credentials.QuotedUser(), c.blueprint.Credentials.QuotedPass()))
 
 	return err
 }
@@ -701,6 +715,19 @@ func (c *Cluster) ConnectionString(tls bool) string {
 	})
 
 	return schema + netutil.HostsToConnectionString(hosts)
+}
+
+// curl performs a request against the management port of the first node in the cluster from the local machine,
+// returning the response body.
+func (c *Cluster) curl(path string) ([]byte, error) {
+	url := fmt.Sprintf("http://%s:8091%s", c.blueprint.Nodes[0].Host, path)
+
+	if c.blueprint.TLS {
+		url = fmt.Sprintf("https://%s:18091%s", c.blueprint.Nodes[0].Host, path)
+	}
+
+	// We ignore TLS verification, given this is just an internal tool
+	return exec.Command("curl", "-s", "-k", "-u", c.blueprint.Credentials.UserPass(), url).CombinedOutput()
 }
 
 // hosts returns a slice of all the hostnames for the nodes in the cluster.

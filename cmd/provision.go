@@ -76,19 +76,30 @@ func provision(_ *cobra.Command, _ []string) error {
 	}
 	defer cluster.Close()
 
-	client, err := nodes.NewBackupClient(config.SSHConfig, config.Blueprint.BackupClient)
-	if err != nil {
-		return errors.Wrap(err, "failed to connect to backup client")
-	}
-	defer client.Close()
-
 	type provisioner interface {
 		Provision() error
 	}
 
-	var provisioners []provisioner
-	if !provisionOptions.loadOnly {
-		provisioners = []provisioner{cluster, client}
+	provisioners := []provisioner{cluster}
+
+	if config.Blueprint.BackupClient == nil && !provisionOptions.loadOnly {
+		return errors.New("a backup client must be provided when provisioning, see the '--load-only' flag")
+	}
+
+	// The backup client is only required when provisioning; when we're loading a dataset into an existing cluster it
+	// may be omitted from the config entirely.
+	if config.Blueprint.BackupClient != nil {
+		client, err := nodes.NewBackupClient(config.SSHConfig, config.Blueprint.BackupClient)
+		if err != nil {
+			return errors.Wrap(err, "failed to connect to backup client")
+		}
+		defer client.Close()
+
+		provisioners = append(provisioners, client)
+	}
+
+	if provisionOptions.loadOnly {
+		provisioners = nil
 	}
 
 	pool := hofp.NewPool(hofp.Options{Size: 2})

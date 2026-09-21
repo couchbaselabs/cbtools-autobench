@@ -21,8 +21,15 @@ import (
 	"text/tabwriter"
 )
 
+// DefaultBucketName is the name of the benchmarking bucket used when one hasn't been provided in the config.
+const DefaultBucketName = "default"
+
 // BucketBlueprint represents the configuration for a bucket that will be created by the 'provision' sub-command.
 type BucketBlueprint struct {
+	// Name is the name of the benchmarking bucket, this defaults to 'default'. An existing bucket may be addressed by
+	// name when loading data into a cluster which wasn't provisioned by 'cbtools-autobench'.
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+
 	VBuckets          uint16         `json:"vbuckets,omitempty" yaml:"vbuckets,omitempty"`
 	Type              string         `json:"type,omitempty" yaml:"type,omitempty"`
 	EvictionPolicy    string         `json:"eviction_policy,omitempty" yaml:"eviction_policy,omitempty"`
@@ -31,6 +38,17 @@ type BucketBlueprint struct {
 	PiTRGranularity   uint64         `json:"pitr_granularity,omitempty" yaml:"pitr_granularity,omitempty"`
 	PiTRMaxHistoryAge uint64         `json:"pitr_max_history_age,omitempty" yaml:"pitr_max_history_age,omitempty"`
 	Data              *DataBlueprint `json:"data,omitempty" yaml:"data,omitempty"`
+}
+
+// BucketName returns the name of the benchmarking bucket, falling back to the default.
+//
+// NOTE: May be called on a nil receiver.
+func (b *BucketBlueprint) BucketName() string {
+	if b == nil || b.Name == "" {
+		return DefaultBucketName
+	}
+
+	return b.Name
 }
 
 // String returns a string representation of the blueprint which will be output in the report.

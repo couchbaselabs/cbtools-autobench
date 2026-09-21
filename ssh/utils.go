@@ -110,6 +110,8 @@ func determineUbuntuPlatform(release string) (value.Platform, error) {
 	switch release {
 	case "20.04":
 		return value.PlatformUbuntu20_04, nil
+	case "24.04":
+		return value.PlatformUbuntu24_04, nil
 	}
 
 	return "", errors.Errorf("unsupported ubuntu release '%s'", release)

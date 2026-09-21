@@ -37,6 +37,11 @@ for more information) which describes which servers to user for the backup/clust
 Loading the benchmarking data will be done the first time provisioning completes, and may be triggered manually (for
 example to load a different dataset without provisioning the cluster again) using the `--load-only` flag.
 
+The `--load-only` flag may also be used to load a dataset into a cluster which wasn't provisioned by
+`cbtools-autobench`, provided SSH access to each of the cluster nodes is available. Since such a cluster won't be using
+the defaults, the administrator credentials and the name of an existing bucket should be supplied in the configuration
+(see Configuration); the `backup_client` blueprint may be omitted entirely.
+
 Benchmarks may be run using the `cbtools-autobench benchmark [backup|restore]` sub-command which accepts a configuration
 which indicates the number of benchmark iterations to run, along with the required configuration for `cbbackupmgr`.
 
@@ -300,8 +305,20 @@ blueprint:
     - host: ""
     # The path where KV data will be stored, configured using 'node-init' from 'couchbase-cli'
       data_path: ""
+    # The administrator credentials for the cluster, only required when running against a cluster which wasn't
+    # provisioned by 'cbtools-autobench' (defaults to the 'cluster_run' credentials)
+    credentials:
+      username: ""
+      password: ""
+    # Whether requests made from the local machine to the cluster must be encrypted, required when the cluster only
+    # exposes its secure ports
+    #
+    # Does not affect the commands which run on the cluster nodes themselves, since they connect via 'localhost'
+    tls: false
     # Describing the benchmarking bucket
     bucket:
+      # The name of the benchmarking bucket (defaults to 'default'), an existing bucket may be addressed by name
+      name: ""
       # Conditionally limit the number of vBuckets (zero value disables limit)
       vbuckets: 0
       # The bucket type i.e. couchbase/ephemeral
@@ -336,6 +353,9 @@ blueprint:
         # The prefix for document keys
         prefix: ""
   # Describing the backup client
+  #
+  # May be omitted entirely when running 'provision' with the '--load-only' flag, since the backup client is only
+  # required when provisioning/benchmarking
   backup_client:
     # Hostname of the server, used to connect via SSH (may be an IP address)
     host: ""

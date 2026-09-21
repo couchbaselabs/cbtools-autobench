@@ -35,6 +35,17 @@ type ClusterBlueprint struct {
 	// Nodes is the list of node blueprints which will be used to create the cluster.
 	Nodes []*NodeBlueprint `yaml:"nodes,omitempty"`
 
+	// Credentials are the administrator credentials for the cluster. These only need to be provided when running
+	// against a cluster which wasn't provisioned by 'cbtools-autobench'.
+	Credentials *Credentials `yaml:"credentials,omitempty"`
+
+	// TLS indicates that requests made from the local machine to the cluster must be encrypted, which is the case for
+	// a cluster where only the secure ports are exposed.
+	//
+	// NOTE: This doesn't affect the commands which run on the cluster nodes themselves, since they address the node
+	// they're running on via 'localhost'.
+	TLS bool `yaml:"tls,omitempty"`
+
 	// Bucket is the blueprint for the bucket that will be created once the cluster is provisioned.
 	Bucket *BucketBlueprint `yaml:"bucket,omitempty"`
 

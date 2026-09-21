@@ -1,18 +1,11 @@
-issues:
-  max-issues-per-linter: 0 # Unlimited
-  max-same-issues: 0 # Unlimited
+version: "2"
+run:
+  go: "1.27"
 linters:
-  fast: false
   enable:
     - asciicheck
     - bodyclose
     - dogsled
-    # - godox
-    - gofmt
-    - gofumpt
-    - goimports
-    - gosimple
-    - ineffassign
     - lll
     - misspell
     - nakedret
@@ -22,17 +15,42 @@ linters:
     - revive
     - rowserrcheck
     - sqlclosecheck
-    - staticcheck
     - unconvert
     - unparam
-    - unused
     - wastedassign
     - whitespace
-    - wsl
-run:
-  go: 1.27
-linters-settings:
-  lll:
-    line-length: 120
-  unparam:
-    check-exported: true
+    - wsl_v5
+  settings:
+    lll:
+      line-length: 120
+    unparam:
+      check-exported: true
+    wsl_v5:
+      allow-first-in-block: true
+      allow-whole-block: false
+      branch-max-lines: 2
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

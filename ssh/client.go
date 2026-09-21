@@ -90,6 +90,7 @@ func (c *Client) SecureUpload(source, sink string) error {
 	}
 
 	log.WithFields(fields).Debug("Creating directory")
+
 	if _, err := c.ExecuteCommand(value.NewCommand("mkdir -p %s", filepath.Dir(sink))); err != nil {
 		return fmt.Errorf("could not create directory %q: %w", filepath.Dir(sink), err)
 	}

@@ -118,6 +118,7 @@ func (n *Node) installCB(path string) error {
 	remotePath := filepath.Join(os.TempDir(), filepath.Base(path))
 
 	log.WithField("host", n.blueprint.Host).Info("Installing 'couchbase-server'")
+
 	if err := n.getPackage(path, remotePath); err != nil {
 		return errors.Wrap(err, "failed to get 'couchbase-server'")
 	}

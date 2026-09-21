@@ -21,7 +21,7 @@ import (
 	"text/tabwriter"
 )
 
-// BucketBlueprint represents the configration for a bucket that will be created by the 'provision' sub-command.
+// BucketBlueprint represents the configuration for a bucket that will be created by the 'provision' sub-command.
 type BucketBlueprint struct {
 	VBuckets          uint16         `json:"vbuckets,omitempty" yaml:"vbuckets,omitempty"`
 	Type              string         `json:"type,omitempty" yaml:"type,omitempty"`

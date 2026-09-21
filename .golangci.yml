@@ -1,8 +1,6 @@
 issues:
   max-issues-per-linter: 0 # Unlimited
   max-same-issues: 0 # Unlimited
-  exclude:
-    - "printf: non-constant format string in call to"
 linters:
   fast: false
   enable:
@@ -32,7 +30,7 @@ linters:
     - whitespace
     - wsl
 run:
-  go: 1.18
+  go: 1.27
 linters-settings:
   lll:
     line-length: 120

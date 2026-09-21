@@ -394,7 +394,7 @@ func (b *BackupClient) purgeArchive(config *value.BenchmarkConfig) error {
 	}
 
 	// We're using S3 backup, use the AWS cli to ensure the remote archive has been removed
-	_, err := b.node.client.ExecuteCommand(value.NewCommand(command))
+	_, err := b.node.client.ExecuteCommand(value.NewCommand("%s", command))
 	if err != nil {
 		return errors.Wrap(err, "failed to purge remote archive")
 	}

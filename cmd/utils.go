@@ -21,7 +21,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
+	"go.yaml.in/yaml/v4"
 )
 
 // markFlagRequired marks the provided flag as required panicking if it was not found.

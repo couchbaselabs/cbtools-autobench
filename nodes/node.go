@@ -168,7 +168,7 @@ func (n *Node) initializeCB() error {
 		init += fmt.Sprintf(" --node-init-data-path %s", n.blueprint.DataPath)
 	}
 
-	_, err := n.client.ExecuteCommand(value.NewCommand(init))
+	_, err := n.client.ExecuteCommand(value.NewCommand("%s", init))
 
 	return err
 }

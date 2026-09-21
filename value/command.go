@@ -25,7 +25,7 @@ type Command string
 // NewCommand creates a new command whilst exposing formatting functionality similar to fmt.Sprintf.
 //
 // NOTE: Whitespace will be removed from the return command.
-func NewCommand(format string, args ...interface{}) Command {
+func NewCommand(format string, args ...any) Command {
 	command := fmt.Sprintf(format, args...)
 
 	command = strings.ReplaceAll(command, "\\\n", "")
@@ -41,10 +41,10 @@ func (c Command) ToString(environment map[string]string) string {
 		return string(c)
 	}
 
-	var env string
+	var env strings.Builder
 	for key, value := range environment {
-		env += fmt.Sprintf("export %s=%s; ", key, value)
+		fmt.Fprintf(&env, "export %s=%s; ", key, value)
 	}
 
-	return env + string(c)
+	return env.String() + string(c)
 }

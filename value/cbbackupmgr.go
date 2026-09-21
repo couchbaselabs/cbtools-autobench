@@ -140,7 +140,7 @@ func (c *CBMConfig) CommandConfig() Command {
 	command = c.addEncryptionArgs(command, true)
 	command = c.addPointInTimeFlag(command)
 
-	return NewCommand(command)
+	return NewCommand("%s", command)
 }
 
 // CommandBackup returns a command which may be run on the remote backup client to perform a backup.
@@ -164,7 +164,7 @@ func (c *CBMConfig) CommandBackup(host string, ignoreBlackhole bool) Command {
 		command = c.addBlackhole(command)
 	}
 
-	return NewCommand(command)
+	return NewCommand("%s", command)
 }
 
 // CommandRestore returns a command which can be run on the remote backup client to perform a restore.
@@ -182,7 +182,7 @@ func (c *CBMConfig) CommandRestore(host string) Command {
 	command = c.addThreads(command)
 	command = c.addBlackhole(command)
 
-	return NewCommand(command)
+	return NewCommand("%s", command)
 }
 
 // CommandCollectLogs returns a command which can be run on the remote backup client to collect the 'cbbackupmgr' logs.
@@ -192,7 +192,7 @@ func (c *CBMConfig) CommandCollectLogs() Command {
 	command = c.addCloudArgs(command)
 	command = c.prefixEnvironment(command)
 
-	return NewCommand(command)
+	return NewCommand("%s", command)
 }
 
 // CommandRemove returns a command which can be run on the remote backup client to remove all the backups from start to
@@ -209,7 +209,7 @@ func (c *CBMConfig) CommandRemove(start, end string) Command {
 	command = c.prefixEnvironment(command)
 	command = c.addCloudArgs(command)
 
-	return NewCommand(command)
+	return NewCommand("%s", command)
 }
 
 // CommandInfo returns a command which can be run on the remote backup client which will return information about the
@@ -220,7 +220,7 @@ func (c *CBMConfig) CommandInfo() Command {
 	command = c.prefixEnvironment(command)
 	command = c.addCloudArgs(command)
 
-	return NewCommand(command)
+	return NewCommand("%s", command)
 }
 
 // prefixEnvironment with prefix the given command with the current 'cbbackupmgr' environment variables.
@@ -229,12 +229,12 @@ func (c *CBMConfig) prefixEnvironment(command string) string {
 		return command
 	}
 
-	var env string
+	var env strings.Builder
 	for key, value := range c.EnvVars {
-		env += fmt.Sprintf("export %s=%s; ", key, value)
+		fmt.Fprintf(&env, "export %s=%s; ", key, value)
 	}
 
-	return env + command
+	return env.String() + command
 }
 
 // addStorage will add the storage flag to the given command if required.

@@ -407,7 +407,7 @@ func (c *Cluster) createBucket() error {
 
 	command = c.addPiTRArgs(command)
 
-	_, err := c.nodes[0].client.ExecuteCommand(value.NewCommand(command))
+	_, err := c.nodes[0].client.ExecuteCommand(value.NewCommand("%s", command))
 
 	return err
 }
@@ -527,7 +527,9 @@ func (c *Cluster) loadData() error {
 
 	switch c.blueprint.Bucket.Data.DataLoader {
 	case "", value.CBM:
-		nodeDataLoadingFunc = func(node *Node) error { return c.loadDataFromNodeUsingBackupMgr(node, <-items, c.blueprint.Bucket.Data.Prefix) }
+		nodeDataLoadingFunc = func(node *Node) error {
+			return c.loadDataFromNodeUsingBackupMgr(node, <-items, c.blueprint.Bucket.Data.Prefix)
+		}
 	case value.Pillowfight:
 		nodeDataLoadingFunc = func(node *Node) error { return c.loadDataFromNodeUsingPillowfight(node, <-items) }
 	default:
@@ -573,7 +575,7 @@ func (c *Cluster) loadDataFromNodeUsingBackupMgr(node *Node, items int, prefix s
 		command += " --low-compression"
 	}
 
-	_, err := node.client.ExecuteCommand(value.NewCommand(command))
+	_, err := node.client.ExecuteCommand(value.NewCommand("%s", command))
 
 	return err
 }
@@ -625,7 +627,7 @@ func (c *Cluster) loadDataFromNodeUsingPillowfight(node *Node, items int) error 
 		command += " --compress"
 	}
 
-	_, err := node.client.ExecuteCommand(value.NewCommand(command))
+	_, err := node.client.ExecuteCommand(value.NewCommand("%s", command))
 
 	return err
 }

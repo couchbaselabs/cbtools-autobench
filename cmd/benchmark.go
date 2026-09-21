@@ -18,9 +18,9 @@ import (
 	"os"
 
 	fsutil "github.com/couchbase/tools-common/fs/util"
-	"github.com/jamesl33/cbtools-autobench/nodes"
-	"github.com/jamesl33/cbtools-autobench/report"
-	"github.com/jamesl33/cbtools-autobench/value"
+	"github.com/couchbaselabs/cbtools-autobench/nodes"
+	"github.com/couchbaselabs/cbtools-autobench/report"
+	"github.com/couchbaselabs/cbtools-autobench/value"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"

@@ -15,7 +15,7 @@
 package report
 
 import (
-	"github.com/jamesl33/cbtools-autobench/value"
+	"github.com/couchbaselabs/cbtools-autobench/value"
 )
 
 // Options encapsulates the options which may be passed into the 'NewReport' function and avoids having ungainly

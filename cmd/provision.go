@@ -17,7 +17,7 @@ package cmd
 import (
 	"context"
 
-	"github.com/jamesl33/cbtools-autobench/nodes"
+	"github.com/couchbaselabs/cbtools-autobench/nodes"
 
 	"github.com/couchbase/tools-common/sync/v2/hofp"
 	"github.com/pkg/errors"

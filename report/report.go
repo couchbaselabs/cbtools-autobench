@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/jamesl33/cbtools-autobench/value"
+	"github.com/couchbaselabs/cbtools-autobench/value"
 )
 
 // TODO (jamesl33) We should print/display the cluster/backup client version.

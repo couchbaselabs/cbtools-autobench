@@ -1,4 +1,4 @@
-module github.com/jamesl33/cbtools-autobench
+module github.com/couchbaselabs/cbtools-autobench
 
 go 1.27.0
 

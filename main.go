@@ -19,8 +19,8 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/jamesl33/cbtools-autobench/cmd"
-	"github.com/jamesl33/cbtools-autobench/utilities"
+	"github.com/couchbaselabs/cbtools-autobench/cmd"
+	"github.com/couchbaselabs/cbtools-autobench/utilities"
 
 	"github.com/apex/log"
 	"github.com/pkg/errors"

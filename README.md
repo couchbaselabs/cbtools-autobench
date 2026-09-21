@@ -1,7 +1,7 @@
 cbtools-autobench
 -----------------
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/jamesl33/cbtools-autobench.svg)](https://pkg.go.dev/github.com/jamesl33/cbtools-autobench)
+[![Go Reference](https://pkg.go.dev/badge/github.com/couchbaselabs/cbtools-autobench.svg)](https://pkg.go.dev/github.com/couchbaselabs/cbtools-autobench)
 
 An automatic benchmarking tools designed to benchmark Couchbase tools, written with the intention of producing reliable
 benchmarks and to reduce the feedback loop for changes made to performance critical components.

@@ -22,7 +22,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jamesl33/cbtools-autobench/value"
+	"github.com/couchbaselabs/cbtools-autobench/value"
 
 	"github.com/apex/log"
 	"github.com/pkg/errors"

@@ -20,7 +20,7 @@ import (
 	"path/filepath"
 
 	fsutil "github.com/couchbase/tools-common/fs/util"
-	"github.com/jamesl33/cbtools-autobench/value"
+	"github.com/couchbaselabs/cbtools-autobench/value"
 
 	"github.com/apex/log"
 	"github.com/pkg/errors"

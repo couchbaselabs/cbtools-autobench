@@ -17,7 +17,7 @@ package cmd
 import (
 	"os"
 
-	"github.com/jamesl33/cbtools-autobench/value"
+	"github.com/couchbaselabs/cbtools-autobench/value"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
